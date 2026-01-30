@@ -1,0 +1,105 @@
+---
+description: Enforce correct Clerk integration with Next.js App Router
+globs: **/{middleware,proxy}.ts,**/app/layout.tsx
+alwaysApply: false
+---
+
+# Clerk + Next.js App Router Integration
+
+**Enforce ONLY current, correct patterns for Clerk with Next.js App Router.**
+
+## ✅ REQUIRED PATTERNS
+
+### 1. Installation
+```bash
+npm install @clerk/nextjs
+```
+
+### 2. Environment Variables (`.env.local`)
+```bash
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
+CLERK_SECRET_KEY=YOUR_SECRET_KEY
+```
+**⚠️ Use placeholders only in code examples. Never expose real keys.**
+
+### 3. Middleware (`middleware.ts` or `proxy.ts`)
+```typescript
+import { clerkMiddleware } from "@clerk/nextjs/server";
+
+export default clerkMiddleware();
+
+export const config = {
+  matcher: [
+    "/((?!_next|[^?]*\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    "/(api|trpc)(.*)",
+  ],
+};
+```
+
+### 4. Layout (`app/layout.tsx`)
+```typescript
+import { ClerkProvider, SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <ClerkProvider>
+      <html lang="en">
+        <body>
+          <header>
+            <SignedOut>
+              <SignInButton />
+              <SignUpButton />
+            </SignedOut>
+            <SignedIn>
+              <UserButton />
+            </SignedIn>
+          </header>
+          {children}
+        </body>
+      </html>
+    </ClerkProvider>
+  );
+}
+```
+
+### 5. Server-Side Auth
+```typescript
+// Import from @clerk/nextjs/server
+import { auth } from "@clerk/nextjs/server";
+
+export default async function Page() {
+  const { userId } = await auth();
+  // Use async/await with auth()
+}
+```
+
+## ❌ FORBIDDEN PATTERNS
+
+### DO NOT use deprecated APIs:
+```typescript
+// ❌ WRONG - Old middleware
+import { authMiddleware } from "@clerk/nextjs";
+
+// ❌ WRONG - Pages Router pattern
+// pages/_app.tsx or pages/signin.js
+
+// ❌ WRONG - Non-async auth
+const { userId } = auth(); // Missing await
+```
+
+## 🔍 VERIFICATION CHECKLIST
+
+Before generating Clerk code, verify:
+
+- [ ] Using `clerkMiddleware()` from `@clerk/nextjs/server`
+- [ ] `<ClerkProvider>` wraps app in `app/layout.tsx`
+- [ ] All imports from `@clerk/nextjs` or `@clerk/nextjs/server`
+- [ ] Using App Router structure (`app/` not `pages/`)
+- [ ] Only placeholder keys in code examples
+- [ ] `auth()` called with `await`
+
+## 📚 Reference
+
+Latest docs: https://clerk.com/docs/quickstarts/nextjs
+
+**If any pattern above is violated, STOP and correct before proceeding.**
